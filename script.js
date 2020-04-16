@@ -1,9 +1,8 @@
 const inquirer = require("inquirer")
 const orm = require("./config/orm"); 
 
-//=================================
+//================================= //Inquirer prompts
 
-//Inquirer prompts
 const optionMenuText = 
 [
     {
@@ -71,9 +70,24 @@ const createNewDepartmentText = [
     }
 ]
 
-//=================================
+const updateEmployeeText = [
+    {
+        type: "list",
+        name: "employeeName",
+        message: `What is the name of the employee you want to update?`,
+        choices: []
+    },
+    {
+        type: "list",
+        name: "updateName",
+        message: `Which department would you like to change this employee to?`,
+        choices: []
+    }
+]
 
-//Inquirer function prompts and orm function
+//================================= //Inquirer function prompts and orm functions
+
+//Main evenet handling
 function mainPrompt(){
 
     //Main Prompt
@@ -128,6 +142,9 @@ function mainPrompt(){
 
         } else if(response.action === "Update employee role"){
 
+            //Change employees role
+            updateEmployee ()
+
         } else {
             orm.endConnection()        
         }
@@ -136,6 +153,7 @@ function mainPrompt(){
 
 }
 
+//Create employee
 function promptEmployeeCreation (){
 
     orm.viewRoles(roleResult =>{
@@ -165,9 +183,12 @@ function promptEmployeeCreation (){
 
                 //Finds the employee object that was selected by user choice
                 let employeeObj = employeesResult.find(element => `${element.first_name} ${element.last_name}` === employeeAnswers.manager_name);
+
                 
                 //If no manager was selected set id = 0 
                 if(employeeObj === undefined) employeeObj = {id: 0}
+
+                console.log(employeeObj.id)
 
                 //Create employee object
                 orm.createEmployee(employeeAnswers.first_name.trim(), employeeAnswers.last_name.trim(), roleObj.id, employeeObj.id)
@@ -186,6 +207,7 @@ function promptEmployeeCreation (){
     })
 }
 
+//Create role
 function promptRoleCreation (){
     orm.viewDepartment(departmentResult => {
 
@@ -220,6 +242,7 @@ function promptRoleCreation (){
     })
 }
 
+//Create departments
 function promptDepartmentCreation (){
 
     inquirer.prompt(createNewDepartmentText).then(employeeAnswers => {
@@ -231,6 +254,48 @@ function promptDepartmentCreation (){
 
     })
 }
+
+function updateEmployee () {
+
+    orm.viewEmployees(employeesResult =>{
+
+        //If there are no employees exit out of the process and return to main prompt
+        if(employeesResult.length < 1){
+
+            console.log()
+            console.log("\x1b[31m", "No employees have been created! Create one then you can change his/her role!")
+            console.log()
+
+            return mainPrompt()
+        }
+
+        employeesResult.forEach(element => {updateEmployeeText[0].choices.push(`${element.first_name} ${element.last_name}`)});
+
+        orm.viewRoles(roleResult =>{
+
+            roleResult.forEach(element => {updateEmployeeText[1].choices.push(element.title)});
+        
+            inquirer.prompt(updateEmployeeText).then(updateData =>{
+
+                //Finds the employee object that was selected by user choice
+                let employeeObj = employeesResult.find(element => `${element.first_name} ${element.last_name}` === updateData.employeeName);
+
+                //Finds the role object that was selected by user choice
+                const roleObj = roleResult.find(element => element.title === updateData.updateName);
+                
+                orm.updateEmployeeRole(employeeObj.id, roleObj.id)
+
+                updateEmployeeText[0].choices = []
+                updateEmployeeText[1].choices = []
+
+                mainPrompt()
+            })
+
+        })
+
+    })
+}
+//================================= //Function calls
 
 mainPrompt()
 

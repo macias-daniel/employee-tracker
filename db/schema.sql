@@ -15,19 +15,20 @@ CREATE TABLE employee (
     PRIMARY KEY (id)
 );
 
-CREATE TABLE role (
-	id INTEGER NOT NULL AUTO_INCREMENT,
-    
-	name VARCHAR(50) NOT NULL,
-    
-    PRIMARY KEY (id)
-);
-
 CREATE TABLE department (
 	id INTEGER NOT NULL AUTO_INCREMENT,
     
+	department_name VARCHAR(50) NOT NULL,
+    
+    PRIMARY KEY (id)
+); 
+
+CREATE TABLE role (
+	id INTEGER NOT NULL AUTO_INCREMENT,
+    
 	title VARCHAR(50) NOT NULL,
-    salary DECIMAL (10, 3) NOT NULL,
+    salary DECIMAL (10, 2) NOT NULL,
+	department_id INTEGER NOT NULL,
     
     PRIMARY KEY (id)
 );

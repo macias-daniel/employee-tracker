@@ -26,8 +26,6 @@ const orm = {
     //Allow user to create employees
     createEmployee: (first_name, last_name, role_id, manager_id) => {
 
-        //Set manager id = null if manger id = 0  was selected
-        if(manager_id = 0) manager_id = null
         connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)`,
         [first_name, last_name, role_id, manager_id], 
         (err, res)=>{
