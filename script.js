@@ -188,8 +188,6 @@ function promptEmployeeCreation (){
                 //If no manager was selected set id = 0 
                 if(employeeObj === undefined) employeeObj = {id: 0}
 
-                console.log(employeeObj.id)
-
                 //Create employee object
                 orm.createEmployee(employeeAnswers.first_name.trim(), employeeAnswers.last_name.trim(), roleObj.id, employeeObj.id)
 
