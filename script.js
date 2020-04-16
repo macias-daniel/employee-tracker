@@ -1,7 +1,7 @@
 const inquirer = require("inquirer")
 const orm = require("./config/orm"); 
 
-
+//=================================
 
 //Inquirer prompts
 const optionMenuText = 
@@ -27,14 +27,16 @@ const createNewEmployeeText =
         message: `What is this employees last name?`
     },
     {
-        type: "input",
+        type: "list",
         name: "role_id",
-        message: `What is this employees role`
+        message: `What is this employees role`,
+        choices: []
     },
     {
-        type: "input",
-        name: "manager_id",
-        message: `Who is this employees manager?`
+        type: "list",
+        name: "manager_name",
+        message: `Who is this employees manager?`,
+        choices: [`None`]
     },
 
 ]
@@ -53,9 +55,10 @@ const createNewRoleText =
         message: `What is this roles salary?`
     },
     {
-        type: "input",
+        type: "list",
         name: "roleDepartment",
-        message: `What department is this role a part of?`
+        message: `What department is this role a part of?`,
+        choices: []
     }
 
 ]
@@ -68,6 +71,9 @@ const createNewDepartmentText = [
     }
 ]
 
+//=================================
+
+//Inquirer function prompts and orm function
 function mainPrompt(){
 
     //Main Prompt
@@ -76,7 +82,7 @@ function mainPrompt(){
         if(response.action === "View all employees"){
     
             //Display Employees
-            orm.viewEmployees((res)=>{
+            orm.viewAllEmployeeData((res)=>{
                 console.log()
                 console.table(res)
                 mainPrompt()
@@ -132,28 +138,84 @@ function mainPrompt(){
 
 function promptEmployeeCreation (){
 
-    inquirer.prompt(createNewEmployeeText).then(employeeAnswers => {
+    orm.viewRoles(roleResult =>{
 
-        //Create new employee based on inquirer prompt
-        orm.createEmployee(employeeAnswers.first_name.trim(), employeeAnswers.last_name.trim(), employeeAnswers. role_id, employeeAnswers.manager_id)
-        console.log()
+        //Change inquirer prompt depending on the already created roles
+        roleResult.forEach(element => {createNewEmployeeText[2].choices.push(element.title)});
 
-        mainPrompt()
+        if(roleResult.length < 1){
 
+            console.log()
+            console.log("\x1b[31m", "No roles have been created! Create one then you can create an employee!")
+            console.log()
 
+            return mainPrompt()
+        }
+
+        orm.viewEmployees(employeesResult =>{
+            
+            //Change inquirer prompt depending on the already created employees
+            employeesResult.forEach(element => {createNewEmployeeText[3].choices.push(`${element.first_name} ${element.last_name}`)});
+            
+            //Start inquirer prompting
+            inquirer.prompt(createNewEmployeeText).then(employeeAnswers => {
+
+                //Finds the role object that was selected by user choice
+                const roleObj = roleResult.find(element => element.title === employeeAnswers.role_id);
+
+                //Finds the employee object that was selected by user choice
+                let employeeObj = employeesResult.find(element => `${element.first_name} ${element.last_name}` === employeeAnswers.manager_name);
+                
+                //If no manager was selected set id = 0 
+                if(employeeObj === undefined) employeeObj = {id: 0}
+
+                //Create employee object
+                orm.createEmployee(employeeAnswers.first_name.trim(), employeeAnswers.last_name.trim(), roleObj.id, employeeObj.id)
+
+                //Spacing
+                console.log()
+
+                //Reset text prompt array values
+                createNewEmployeeText[2].choices = []
+                createNewEmployeeText[3].choices = [`None`]
+
+                //Return to main prompt
+                mainPrompt()
+            })
+        })
     })
 }
 
 function promptRoleCreation (){
+    orm.viewDepartment(departmentResult => {
 
-    inquirer.prompt(createNewRoleText).then(employeeAnswers => {
+        //Update role creation prompt to include created departments
+        departmentResult.forEach(element => {createNewRoleText[2].choices.push(element.department_name)});
 
-        //Create new role based on inquirer prompt
         
-        orm.createRole(employeeAnswers.roleName, employeeAnswers.roleSalary, employeeAnswers.roleDepartment)
-        console.log()
-        mainPrompt()
+        if(departmentResult.length < 1){
 
+            console.log()
+            console.log("\x1b[31m", "No departments have been created! Create one then you can create a role!")
+            console.log()
+
+            return mainPrompt()
+        }
+
+        //Prompt user for role creation
+        inquirer.prompt(createNewRoleText).then(employeeAnswers => {
+            
+            const departmentObj = departmentResult.find(element => element.department_name ===  employeeAnswers.roleDepartment);
+
+            //Create new role
+            orm.createRole(employeeAnswers.roleName, employeeAnswers.roleSalary, departmentObj.id)
+
+            //Reset Prompt
+            createNewRoleText[2].choices = []
+
+            mainPrompt()
+        
+        })
 
     })
 }
@@ -169,7 +231,6 @@ function promptDepartmentCreation (){
 
     })
 }
-
 
 mainPrompt()
 
